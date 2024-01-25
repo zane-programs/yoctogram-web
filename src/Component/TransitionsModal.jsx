@@ -45,7 +45,7 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
                 const response = await uploadImage(genResponse.url, selectedFile, genResponse.fields); 
                 setOpenTransitionsModal(false);
 
-                if (response.status == 204) {
+                if (response.status == 204 || response.status == 200) {
                     // S3 response
                     const confirmResponse = await confirmImageUploaded(genResponse.id);
                     if (!confirmResponse.success) {
