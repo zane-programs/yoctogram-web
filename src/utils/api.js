@@ -1,20 +1,20 @@
 const BASE_URL = import.meta.env.VITE_PROD_API;
 
 const fetchWithAuth = async (url, options = {}, isBlob = false) => {
-  const token = localStorage.getItem('token'); // Retrieve token for each call
+  const token = localStorage.getItem("token"); // Retrieve token for each call
 
   // Set default headers and method
   const defaultOptions = {
     headers: {
       // Don't set 'Content-Type' to 'application/json' if the response is a blob
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
     },
-    method: 'GET',
-    ...options
+    method: "GET",
+    ...options,
   };
 
   if (!isBlob) {
-    defaultOptions.headers['Content-Type'] = 'application/json';
+    defaultOptions.headers["Content-Type"] = "application/json";
   }
 
   try {
@@ -39,54 +39,80 @@ const fetchWithAuth = async (url, options = {}, isBlob = false) => {
 
 // Health Check Endpoint
 export const apiHealthCheck = async () => {
-  return fetchWithAuth('/api/v1/health');
+  return fetchWithAuth("/api/v1/health");
 };
 
 // Users API Endpoints
 export const fetchCurrentUser = async () => {
-  return fetchWithAuth('/api/v1/users/me');
+  return fetchWithAuth("/api/v1/users/me");
 };
 
 export const fetchUserById = async (userId) => {
   return fetchWithAuth(`/api/v1/users/profile/${userId}`);
 };
 
-export const generateUploadUrl = async (privacy) => {
-  return fetchWithAuth(`/api/v1/images/upload/${privacy}/generate`, { method: 'POST' });
+export const fetchLikesForImage = async (imageId) => {
+  return fetchWithAuth(`/api/v1/images/social/${imageId}/likes`);
+};
+
+export const likeImage = async (imageId) => {
+  return fetchWithAuth(`/api/v1/images/social/${imageId}/like`, {
+    method: "POST",
+  });
+};
+
+export const unlikeImage = async (imageId) => {
+  return fetchWithAuth(`/api/v1/images/social/${imageId}/unlike`, {
+    method: "POST",
+  });
+};
+
+export const generateUploadUrl = async (privacy, caption = "") => {
+  let endpoint = `/api/v1/images/upload/${privacy}/generate`;
+  // Add caption if provided
+  if (caption) {
+    endpoint += "?" + new URLSearchParams({ caption }).toString();
+  }
+
+  return fetchWithAuth(endpoint, { method: "POST" });
 };
 
 // Images API Endpoints
 export const uploadImage = async (url, file, fields) => {
   const formData = new FormData();
-  Object.entries(fields).map(([key, value]) => formData.append(key, value));
-  formData.append('file', file);
+  if (fields) {
+    Object.entries(fields).map(([key, value]) => formData.append(key, value));
+  }
+  formData.append("file", file);
 
-  if (url.indexOf('dev') > -1) {
+  if (url.indexOf("dev") > -1) {
     // development mode
-    console.log(url)
+    console.log(url);
     return fetch(BASE_URL + url, {
-      method: 'POST',
+      method: "POST",
       body: formData,
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // FormData uses its own content type
+        Authorization: `Bearer ${localStorage.getItem("token")}`, // FormData uses its own content type
       },
-      isBlob: true
+      isBlob: true,
     });
   } else {
     // upload to S3
     return fetch(url, {
-      method: 'POST',
-      body: formData
-    })
+      method: "POST",
+      body: formData,
+    });
   }
 };
 
 export const confirmImageUploaded = async (imageId) => {
-  return fetchWithAuth(`/api/v1/images/upload/${imageId}/confirm`, { method: 'POST' });
+  return fetchWithAuth(`/api/v1/images/upload/${imageId}/confirm`, {
+    method: "POST",
+  });
 };
 
 export const retrieveImage = async (downloadUrl) => {
-  if (downloadUrl.indexOf('dev') > -1) {
+  if (downloadUrl.indexOf("dev") > -1) {
     // Indicate that the response should be treated as a blob
     return fetchWithAuth(downloadUrl, {}, true);
   } else {
@@ -99,5 +125,7 @@ export const fetchLatestFeed = async (before, after) => {
 };
 
 export const fetchFeedByUser = async (creator, before, after) => {
-  return fetchWithAuth(`/api/v1/feed/by_user/${creator}?before=${before}&after=${after}`);
+  return fetchWithAuth(
+    `/api/v1/feed/by_user/${creator}?before=${before}&after=${after}`
+  );
 };

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Typography, Button, Fade, Modal, Box, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material';
+import { Typography, Button, Fade, Modal, Box, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel, TextField } from '@mui/material';
 import AddAPhotoIcon from '@mui/icons-material/AddAPhoto';
 import { confirmImageUploaded, generateUploadUrl, uploadImage } from '../utils/api'
 
@@ -7,14 +7,19 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
     const [selectedFile, setSelectedFile] = React.useState(null);
     const [privacy, setPrivacy] = React.useState('public');
     const [imagePreviewUrl, setImagePreviewUrl] = React.useState('');
+    const [caption, setCaption] = React.useState('');
 
     const hiddenFileInput = React.useRef(null);
 
-    const handlePrivacyChange = (event) => {
+    const handlePrivacyChange = React.useCallback((event) => {
         setPrivacy(event.target.value);
-    };
+    }, []);
 
-    const handleFileChange = (event) => {
+    const handleCaptionChange = React.useCallback((e) => {
+        setCaption(e.target.value);
+    }, []);
+
+    const handleFileChange = React.useCallback((event) => {
         const file = event.target.files[0];
         if (file) {
             setSelectedFile(file);
@@ -26,16 +31,16 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
              };
              reader.readAsDataURL(file);
         }
-    };
+    }, []);
 
-    const handleUploadClick = (event) => {
+    const handleUploadClick = React.useCallback((event) => {
         hiddenFileInput.current.click();
-    };
+    }, []);
 
-    const handleUploadImage = async () => {
+    const handleUploadImage = React.useCallback(async () => {
         if (selectedFile) {
             try {
-                const genResponse = await generateUploadUrl(privacy);
+                const genResponse = await generateUploadUrl(privacy, caption);
                 if (!genResponse.success) {
                     // Handle failure here
                     console.error('Image upload failed:', genResponse.detail);
@@ -73,7 +78,7 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
                 console.error('There was an error uploading the image:', error);
             }
         }
-    };
+    }, [caption, privacy, selectedFile, setOpenTransitionsModal]);
 
 
     return (
@@ -112,6 +117,9 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
                                 alignItems: 'center',
                                 gap: 2,
                                 mt: 2,
+                                "& fieldset": {
+                                    width: "100%"
+                                }
                             }}
                         >
                             {/* Hidden file input */}
@@ -162,6 +170,19 @@ export default function TransitionsModal({ openTransitionsModal, setOpenTransiti
                                     <FormControlLabel value="public" control={<Radio />} label="Public" />
                                     <FormControlLabel value="private" control={<Radio />} label="Private" />
                                 </RadioGroup>
+                            </FormControl>
+                            <FormControl component="fieldset">
+                                <FormLabel component="legend">Caption (optional)</FormLabel>
+                                <Box mt={2} mb={1}>
+                                    <TextField
+                                        value={caption}
+                                        placeholder="Add a caption..."
+                                        minRows={6}
+                                        onChange={handleCaptionChange}
+                                        multiline
+                                        fullWidth
+                                    />
+                                </Box>
                             </FormControl>
                             <Button
                                 variant='contained'
